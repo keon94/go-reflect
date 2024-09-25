@@ -50,3 +50,29 @@ func GetField[T any](obj any, fields ...string) T {
 	}
 	return elem.Interface().(T) // obj and T are both concrete - return directly
 }
+
+// Digs through the object's fields to set the last field to the target value. Usage is SetField(obj, "field1", "field2", "field3")(value)
+func SetField(obj any, fields ...string) func(any) {
+	reflectedObj := reflect.ValueOf(obj)
+	if reflectedObj.Kind() == reflect.Ptr {
+		reflectedObj = reflectedObj.Elem()
+	}
+	for _, field := range fields {
+		if reflectedObj.Kind() == reflect.Ptr {
+			reflectedObj = reflectedObj.Elem()
+		}
+		reflectedObj = reflectedObj.FieldByName(field)
+		if !reflectedObj.IsValid() {
+			panic(fmt.Sprintf("field %s not found", field))
+		}
+	}
+	return func(target any) {
+		reflectedPtr := reflect.NewAt(reflectedObj.Type(), unsafe.Pointer(reflectedObj.UnsafeAddr())).Elem()
+		if target == nil {
+			reflectedPtr.SetZero()
+		} else {
+			v := reflect.ValueOf(target)
+			reflectedPtr.Set(v)
+		}
+	}
+}
