@@ -16,6 +16,8 @@ func GetField[T any](obj any, fields ...string) T {
 	for _, field := range fields {
 		if reflectedObj.Kind() == reflect.Ptr {
 			reflectedObj = reflectedObj.Elem()
+		} else if reflectedObj.Kind() == reflect.Interface {
+			reflectedObj = reflectedObj.Elem().Elem()
 		}
 		reflectedObj = reflectedObj.FieldByName(field)
 		if !reflectedObj.IsValid() {
